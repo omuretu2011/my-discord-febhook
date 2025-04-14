@@ -1,0 +1,143 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Webhook メッセージ送信</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            margin: 0 auto;
+        }
+        input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .message-box {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 5px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Discord Webhook メッセージ送信</h2>
+
+        <!-- Webhook URL 入力フォーム -->
+        <label for="webhookURL">Webhook URL:</label>
+        <input type="text" id="webhookURL" placeholder="Webhook URLを入力してください" required>
+
+        <!-- ユーザー名変更フォーム -->
+        <label for="username">表示名:</label>
+        <input type="text" id="username" placeholder="表示名を入力" required>
+
+        <!-- メッセージ入力フォーム -->
+        <label for="message">メッセージ:</label>
+        <textarea id="message" rows="4" placeholder="メッセージを入力..." required></textarea>
+
+        <button id="sendMessage">送信</button>
+        
+        <div class="message-box" id="messages">
+            <h3>過去のメッセージ</h3>
+            <!-- メッセージがここに表示されます -->
+        </div>
+    </div>
+
+    <script>
+        // ローカルストレージに保存されたメッセージを読み込む
+        function loadMessages() {
+            const messages = JSON.parse(localStorage.getItem('messages')) || [];
+            const messageBox = document.getElementById('messages');
+            messageBox.innerHTML = '<h3>過去のメッセージ</h3>';
+
+            messages.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message');
+                messageDiv.innerHTML = `<strong>${msg.username}:</strong> ${msg.content}`;
+                messageBox.appendChild(messageDiv);
+            });
+        }
+
+        // メッセージをローカルストレージに保存
+        function saveMessage(username, content) {
+            const messages = JSON.parse(localStorage.getItem('messages')) || [];
+            messages.push({ username, content });
+            localStorage.setItem('messages', JSON.stringify(messages));
+        }
+
+        document.getElementById('sendMessage').addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const webhookURL = document.getElementById('webhookURL').value;
+            const username = document.getElementById('username').value;
+            const message = document.getElementById('message').value;
+
+            if (!webhookURL || !username || !message) {
+                alert("すべてのフィールドを入力してください");
+                return;
+            }
+
+            // Discord Webhook にメッセージを送信
+            const payload = {
+                username: username,
+                content: message
+            };
+
+            fetch(webhookURL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert("メッセージが送信されました！");
+                saveMessage(username, message); // メッセージをローカルストレージに保存
+                loadMessages(); // 過去のメッセージを更新
+                document.getElementById('message').value = ''; // メッセージ入力欄をクリア
+            })
+            .catch(error => {
+                console.error("エラー:", error);
+                alert("メッセージの送信に失敗しました");
+            });
+        });
+
+        // ページ読み込み時に過去のメッセージを表示
+        loadMessages();
+    </script>
+
+</body>
+</html>
